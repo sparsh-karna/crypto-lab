@@ -1,10 +1,9 @@
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
 public class Server {
 
-    static String decrypt(String s, int n){
+    static String decrypt(String s, int n) {
         String new_s = "";
         for (char c : s.toCharArray()) {
             if (c >= 'a' && c <= 'z') {
@@ -28,8 +27,8 @@ public class Server {
 
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            String encrypted = in.readLine();      
-            int key = Integer.parseInt(in.readLine());   
+            String encrypted = in.readLine();
+            int key = Integer.parseInt(in.readLine());
 
             System.out.println("Encrypted message received: " + encrypted);
 
@@ -38,8 +37,7 @@ public class Server {
 
             socket.close();
             serverSocket.close();
-        } 
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
