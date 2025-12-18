@@ -1,0 +1,1195 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{subcaption}
+
+\geometry{margin=1in}
+
+\lstset{
+    language=Java,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    backgroundcolor=\color{gray!10},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    
+    \includegraphics[width=1\textwidth]{university_logo.png}
+    
+    \vspace{1.5cm}
+    
+    {\LARGE\bfseries Lab Exercise 1}
+    
+    \vspace{0.5cm}
+    
+    {\Large Classical Encryption Techniques}
+    
+    \vspace{2cm}
+    
+    {\large
+    \textbf{Name:} Sparsh Karna\\[0.3cm]
+    \textbf{Registration Number:} 23BDS1172\\[0.3cm]
+    \textbf{Lab Slot:} L21 + L22
+    }
+    
+    \vfill
+    
+\end{titlepage}
+
+\newpage
+
+\section{Aim of Exercise}
+The aim of this laboratory exercise is to implement and understand various classical encryption techniques using Java. The exercise includes implementing both substitution and transposition ciphers in a client-server architecture. Each cipher algorithm is implemented where the server encrypts the plaintext and sends the ciphertext to the client, which then decrypts it using the appropriate key. This helps in understanding the fundamental concepts of cryptography, including encryption, decryption, and key management.
+
+\newpage
+
+\section{Encryption Algorithms}
+
+\subsection{Caesar Cipher}
+
+\subsubsection{Algorithm}
+\begin{enumerate}[label=\arabic*.]
+    \item Server reads plaintext message and numeric key from user input
+    \item For each character in the plaintext:
+    \begin{itemize}
+        \item If character is lowercase (a-z), shift it forward by key positions in alphabet
+        \item If character is uppercase (A-Z), shift it forward by key positions in alphabet
+        \item If character is non-alphabetic, leave it unchanged
+    \end{itemize}
+    \item Server sends encrypted message to client over socket connection
+    \item Client receives encrypted message from server
+    \item Client reads decryption key from user input
+    \item For each character in ciphertext, client applies reverse shift (subtract key)
+    \item Client displays decrypted plaintext message
+\end{enumerate}
+
+\subsubsection{Server Code}
+\begin{lstlisting}
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Server {
+
+    static String encrypt(String s, int n) {
+        String new_s = "";
+        for (char c : s.toCharArray()) {
+            if (c >= 'a' && c <= 'z') {
+                new_s += (char) ((c - 'a' + n) % 26 + 'a');
+            } else if (c >= 'A' && c <= 'Z') {
+                new_s += (char) ((c - 'A' + n) % 26 + 'A');
+            } else {
+                new_s += c;
+            }
+        }
+        return new_s;
+    }
+
+    public static void main(String[] args) {
+        try {
+            Scanner input = new Scanner(System.in);
+
+            System.out.print("Enter message: ");
+            String message = input.nextLine();
+
+            System.out.print("Enter key: ");
+            int n = input.nextInt();
+
+            String encrypted = encrypt(message, n);
+
+            ServerSocket serverSocket = new ServerSocket(5000);
+            System.out.println("Server started. Waiting for client...");
+
+            Socket socket = serverSocket.accept();
+            System.out.println("Client connected.");
+
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+            out.println(encrypted);
+
+            System.out.println("Encrypted message sent: " + encrypted);
+
+            socket.close();
+            serverSocket.close();
+            input.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Client Code}
+\begin{lstlisting}
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Client {
+
+    static String decrypt(String s, int n) {
+        String new_s = "";
+        for (char c : s.toCharArray()) {
+            if (c >= 'a' && c <= 'z') {
+                new_s += (char) ((c - 'a' - n + 26) % 26 + 'a');
+            } else if (c >= 'A' && c <= 'Z') {
+                new_s += (char) ((c - 'A' - n + 26) % 26 + 'A');
+            } else {
+                new_s += c;
+            }
+        }
+        return new_s;
+    }
+
+    public static void main(String[] args) {
+        try {
+            Socket socket = new Socket("localhost", 5000);
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            String encrypted = in.readLine();
+
+            System.out.println("Encrypted message received: " + encrypted);
+
+            Scanner input = new Scanner(System.in);
+
+            System.out.print("Enter key: ");
+            int n = input.nextInt();
+
+            String decrypted = decrypt(encrypted, n);
+            System.out.println("Decrypted (original) message: " + decrypted);
+
+            socket.close();
+            input.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Input}
+\begin{verbatim}
+Enter message: HelloWorld
+Enter key: 3
+\end{verbatim}
+
+\subsubsection{Output}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{caesar_server.png}
+        \caption{Server Side}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{caesar_client.png}
+        \caption{Client Side}
+    \end{subfigure}
+    \caption{Caesar Cipher Output}
+\end{figure}
+
+\newpage
+
+\subsection{Playfair Cipher}
+
+\subsubsection{Algorithm}
+\begin{enumerate}[label=\arabic*.]
+    \item Server reads keyword and plaintext from user
+    \item Create 5x5 key table by placing keyword characters (excluding duplicates, J=I)
+    \item Fill remaining table cells with unused alphabet letters
+    \item Prepare plaintext: remove non-alphabetic characters, convert J to I
+    \item Create digraphs (pairs): if letters are same, insert 'X', pad with 'X' if odd length
+    \item For each digraph, apply encryption rules:
+    \begin{itemize}
+        \item Same row: replace with letters to their right (wrap around)
+        \item Same column: replace with letters below (wrap around)
+        \item Rectangle: replace with letters on same row but opposite corners
+    \end{itemize}
+    \item Server sends ciphertext to client
+    \item Client receives ciphertext and reads key from user
+    \item Client creates same key table using the key
+    \item For decryption, apply reverse rules on digraphs
+    \item Client displays decrypted plaintext
+\end{enumerate}
+
+\subsubsection{Server Code}
+\begin{lstlisting}
+import java.util.*;
+import java.net.*;
+import java.io.*;
+
+class Server {
+
+    static void makeTable(String k, char[][] kt) {
+        int[] hash = new int[26];
+        int r = 0;
+        int col = 0;
+        for (int i = 0; i < k.length(); i++) {
+            char c = k.charAt(i);
+            if (c < 'A' || c > 'Z')
+                continue;
+            if (c == 'J')
+                c = 'I';
+            int ci = c - 'A';
+            if (hash[ci] == 0) {
+                kt[r][col] = c;
+                hash[ci] = 1;
+                if (c == 'I') {
+                    hash['J' - 'A'] = 1;
+                }
+            }
+            col++;
+            if (col == 5) {
+                col = 0;
+                r++;
+            }
+        }
+        for (char c = 'A'; c <= 'Z'; c++) {
+            if (c == 'J')
+                continue;
+            int ci = c - 'A';
+            if (hash[ci] == 0) {
+                kt[r][col] = c;
+                hash[ci] = 1;
+                col++;
+                if (col == 5) {
+                    col = 0;
+                    r++;
+                }
+            }
+        }
+    }
+
+    static int[] findPosition(char ch, char[][] kt) {
+        if (ch == 'J')
+            ch = 'I';
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                if (kt[i][j] == ch) {
+                    return new int[] { i, j };
+                }
+            }
+        }
+        return null;
+    }
+
+    static String encode(String p, char[][] kt) {
+        p = p.toUpperCase();
+        String prepared = "";
+        int i = 0;
+        while (i < p.length()) {
+            char a = p.charAt(i);
+            if (a < 'A' || a > 'Z') {
+                i++;
+                continue;
+            }
+            if (a == 'J')
+                a = 'I';
+            prepared += a;
+            i++;
+        }
+        String digraphs = "";
+        i = 0;
+        while (i < prepared.length()) {
+            char a = prepared.charAt(i);
+            digraphs += a;
+            if (i == prepared.length() - 1) {
+                digraphs += 'X';
+                break;
+            }
+            char b = prepared.charAt(i + 1);
+            if (a == b) {
+                digraphs += 'X';
+            } else {
+                digraphs += b;
+                i++;
+            }
+            i++;
+        }
+        String newCipher = "";
+        for (i = 0; i < digraphs.length(); i += 2) {
+            char curr = digraphs.charAt(i);
+            char nex = digraphs.charAt(i + 1);
+            int[] ci = findPosition(curr, kt);
+            int[] ni = findPosition(nex, kt);
+            if (ci[0] == ni[0]) {
+                newCipher += kt[ci[0]][(ci[1] + 1) % 5];
+                newCipher += kt[ni[0]][(ni[1] + 1) % 5];
+            } else if (ci[1] == ni[1]) {
+                newCipher += kt[(ci[0] + 1) % 5][ci[1]];
+                newCipher += kt[(ni[0] + 1) % 5][ni[1]];
+            } else {
+                newCipher += kt[ci[0]][ni[1]];
+                newCipher += kt[ni[0]][ci[1]];
+            }
+        }
+        return newCipher;
+    }
+
+    public static void main(String args[]) {
+        try {
+            Scanner input = new Scanner(System.in);
+
+            System.out.print("Enter key: ");
+            String key = input.nextLine().toUpperCase();
+
+            System.out.print("Enter message: ");
+            String plain = input.nextLine();
+
+            char[][] keyTable = new char[5][5];
+            makeTable(key, keyTable);
+            String cipher = encode(plain, keyTable);
+
+            ServerSocket serverSocket = new ServerSocket(5001);
+            System.out.println("Server started. Waiting for client...");
+
+            Socket socket = serverSocket.accept();
+            System.out.println("Client connected.");
+
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+            out.println(cipher);
+
+            System.out.println("Encrypted message sent: " + cipher);
+
+            socket.close();
+            serverSocket.close();
+            input.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Client Code}
+\begin{lstlisting}
+import java.util.*;
+import java.net.*;
+import java.io.*;
+
+class Client {
+
+    static void makeTable(String k, char[][] kt) {
+        int[] hash = new int[26];
+        int r = 0;
+        int col = 0;
+        for (int i = 0; i < k.length(); i++) {
+            char c = k.charAt(i);
+            if (c < 'A' || c > 'Z')
+                continue;
+            if (c == 'J')
+                c = 'I';
+            int ci = c - 'A';
+            if (hash[ci] == 0) {
+                kt[r][col] = c;
+                hash[ci] = 1;
+                if (c == 'I') {
+                    hash['J' - 'A'] = 1;
+                }
+            }
+            col++;
+            if (col == 5) {
+                col = 0;
+                r++;
+            }
+        }
+        for (char c = 'A'; c <= 'Z'; c++) {
+            if (c == 'J')
+                continue;
+            int ci = c - 'A';
+            if (hash[ci] == 0) {
+                kt[r][col] = c;
+                hash[ci] = 1;
+                col++;
+                if (col == 5) {
+                    col = 0;
+                    r++;
+                }
+            }
+        }
+    }
+
+    static int[] findPosition(char ch, char[][] kt) {
+        if (ch == 'J')
+            ch = 'I';
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                if (kt[i][j] == ch) {
+                    return new int[] { i, j };
+                }
+            }
+        }
+        return null;
+    }
+
+    static String decode(String c, char[][] kt) {
+        String plain = "";
+        for (int i = 0; i < c.length(); i += 2) {
+            char curr = c.charAt(i);
+            char nex = c.charAt(i + 1);
+            int[] ci = findPosition(curr, kt);
+            int[] ni = findPosition(nex, kt);
+            if (ci[0] == ni[0]) {
+                plain += kt[ci[0]][(ci[1] - 1 + 5) % 5];
+                plain += kt[ni[0]][(ni[1] - 1 + 5) % 5];
+            } else if (ci[1] == ni[1]) {
+                plain += kt[(ci[0] - 1 + 5) % 5][ci[1]];
+                plain += kt[(ni[0] - 1 + 5) % 5][ni[1]];
+            } else {
+                plain += kt[ci[0]][ni[1]];
+                plain += kt[ni[0]][ci[1]];
+            }
+        }
+        return plain;
+    }
+
+    public static void main(String args[]) {
+        try {
+            Socket socket = new Socket("localhost", 5001);
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            String cipher = in.readLine();
+
+            System.out.println("Encrypted message received: " + cipher);
+
+            Scanner input = new Scanner(System.in);
+
+            System.out.print("Enter key: ");
+            String key = input.nextLine().toUpperCase();
+
+            char[][] keyTable = new char[5][5];
+            makeTable(key, keyTable);
+            String decrypted = decode(cipher, keyTable);
+            System.out.println("Decrypted (original) message: " + decrypted);
+
+            socket.close();
+            input.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Input}
+\begin{verbatim}
+Enter key: MONARCHY
+Enter message: balloon
+\end{verbatim}
+
+\subsubsection{Output}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{playfair_output.png}
+    \caption{Playfair Cipher Output}
+\end{figure}
+
+\newpage
+
+\subsection{Railfence Cipher}
+
+\subsubsection{Algorithm}
+\begin{enumerate}[label=\arabic*.]
+    \item Server reads plaintext and numeric key (number of rails) from user
+    \item Create 2D rail array with dimensions: key x plaintext length
+    \item Fill rail array in zigzag pattern:
+    \begin{itemize}
+        \item Start at top rail (row 0), move diagonally down
+        \item When bottom rail reached, change direction and move up
+        \item When top rail reached, change direction and move down
+        \item Continue until all characters placed
+    \end{itemize}
+    \item Read rail array row-wise to create ciphertext
+    \item Server sends ciphertext to client
+    \item Client receives ciphertext and reads key from user
+    \item Client marks zigzag pattern in empty rail array with '*'
+    \item Fill marked positions with ciphertext characters row-wise
+    \item Read array in zigzag pattern to decrypt plaintext
+    \item Client displays decrypted message
+\end{enumerate}
+
+\subsubsection{Server Code}
+\begin{lstlisting}
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+class Server {
+
+    static String encrypt(String p, int k) {
+        String c = "";
+        char[][] rail = new char[k][p.length()];
+        boolean dir_down = true;
+        int row = 0;
+        for (int i = 0; i < p.length(); i++) {
+            rail[row][i] = p.charAt(i);
+            if (dir_down) {
+                if (row == k - 1) {
+                    dir_down = false;
+                    row--;
+                } else {
+                    row++;
+                }
+            } else {
+                if (row == 0) {
+                    dir_down = true;
+                    row++;
+                } else {
+                    row--;
+                }
+            }
+        }
+        for (int i = 0; i < k; i++) {
+            for (int j = 0; j < p.length(); j++) {
+                if (rail[i][j] != 0) {
+                    c += rail[i][j];
+                }
+            }
+        }
+        return c;
+    }
+
+    public static void main(String args[]) {
+        try {
+            Scanner input = new Scanner(System.in);
+
+            System.out.print("Enter message: ");
+            String plainText = input.nextLine();
+
+            System.out.print("Enter key: ");
+            int key = input.nextInt();
+
+            String cipher = encrypt(plainText, key);
+
+            ServerSocket serverSocket = new ServerSocket(5000);
+            System.out.println("Server started. Waiting for client...");
+
+            Socket socket = serverSocket.accept();
+            System.out.println("Client connected.");
+
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+            out.println(cipher);
+
+            System.out.println("Encrypted message sent: " + cipher);
+
+            socket.close();
+            serverSocket.close();
+            input.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Client Code}
+\begin{lstlisting}
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+class Client {
+
+    static String decrypt(String c, int k) {
+        String p = "";
+        char[][] rail = new char[k][c.length()];
+        boolean dir_down = true;
+        int row = 0;
+        for (int i = 0; i < c.length(); i++) {
+            rail[row][i] = '*';
+            if (dir_down) {
+                if (row == k - 1) {
+                    dir_down = false;
+                    row--;
+                } else {
+                    row++;
+                }
+            } else {
+                if (row == 0) {
+                    dir_down = true;
+                    row++;
+                } else {
+                    row--;
+                }
+            }
+        }
+        int index = 0;
+        for (int i = 0; i < k; i++) {
+            for (int j = 0; j < c.length(); j++) {
+                if (rail[i][j] == '*') {
+                    rail[i][j] = c.charAt(index++);
+                }
+            }
+        }
+        dir_down = true;
+        row = 0;
+        for (int i = 0; i < c.length(); i++) {
+            p += rail[row][i];
+            if (dir_down) {
+                if (row == k - 1) {
+                    dir_down = false;
+                    row--;
+                } else {
+                    row++;
+                }
+            } else {
+                if (row == 0) {
+                    dir_down = true;
+                    row++;
+                } else {
+                    row--;
+                }
+            }
+        }
+        return p;
+    }
+
+    public static void main(String args[]) {
+        try {
+            Socket socket = new Socket("localhost", 5000);
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            String encrypted = in.readLine();
+
+            System.out.println("Encrypted message received: " + encrypted);
+
+            Scanner input = new Scanner(System.in);
+
+            System.out.print("Enter key: ");
+            int n = input.nextInt();
+
+            String decrypted = decrypt(encrypted, n);
+            System.out.println("Decrypted (original) message: " + decrypted);
+
+            socket.close();
+            input.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Input}
+\begin{verbatim}
+Enter message: GeeksforGeeks
+Enter key: 3
+\end{verbatim}
+
+\subsubsection{Output}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{railfence_server.png}
+        \caption{Server Side}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{railfence_client.png}
+        \caption{Client Side}
+    \end{subfigure}
+    \caption{Railfence Cipher Output}
+\end{figure}
+
+\newpage
+
+\subsection{Vernam Cipher}
+
+\subsubsection{Algorithm}
+\begin{enumerate}[label=\arabic*.]
+    \item Server reads plaintext and key from user (both same length, uppercase)
+    \item For each character position:
+    \begin{itemize}
+        \item Convert plaintext character to number (A=0, B=1, ..., Z=25)
+        \item Convert key character to number similarly
+        \item XOR the two numbers
+        \item Convert result modulo 26 back to character
+    \end{itemize}
+    \item Server sends ciphertext to client
+    \item Client receives ciphertext and reads key from user
+    \item For decryption, apply same XOR operation (XOR is self-inverse)
+    \item Client displays decrypted plaintext
+\end{enumerate}
+
+\subsubsection{Server Code}
+\begin{lstlisting}
+import java.util.*;
+import java.net.*;
+import java.io.*;
+
+class Server {
+    static String encode(String p, String k) {
+        StringBuilder c = new StringBuilder();
+        for (int i = 0; i < p.length(); i++) {
+            char pc = (char) (((p.charAt(i) - 'A') ^ (k.charAt(i) - 'A')) % 26 + 'A');
+            c.append(pc);
+        }
+        return c.toString();
+    }
+
+    public static void main(String args[]) throws Exception {
+        ServerSocket ss = new ServerSocket(1234);
+        Socket s = ss.accept();
+        Scanner sc = new Scanner(System.in);
+        
+        String p = sc.nextLine().toUpperCase();
+        
+        String k = sc.nextLine().toUpperCase();
+        
+        String ciphertext = encode(p, k);
+        
+        DataOutputStream out = new DataOutputStream(s.getOutputStream());
+        out.writeBytes(ciphertext + "\n");
+        
+        s.close();
+        ss.close();
+        sc.close();
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Client Code}
+\begin{lstlisting}
+import java.util.*;
+import java.net.*;
+import java.io.*;
+
+class Client {
+    static String decode(String c, String k) {
+        StringBuilder p = new StringBuilder();
+        for (int i = 0; i < c.length(); i++) {
+            char pc = (char) (((c.charAt(i) - 'A') ^ (k.charAt(i) - 'A')) % 26 + 'A');
+            p.append(pc);
+        }
+        return p.toString();
+    }
+
+    public static void main(String args[]) throws Exception {
+        Socket s = new Socket("localhost", 1234);
+        
+        BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        Scanner sc = new Scanner(System.in);
+        
+        String ciphertext = in.readLine();
+        
+        String key = sc.nextLine().toUpperCase();
+        
+        String plaintext = decode(ciphertext, key);
+        
+        System.out.println("Ciphertext: " + ciphertext);
+        System.out.println("Plaintext: " + plaintext);
+        
+        s.close();
+        sc.close();
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Input}
+\begin{verbatim}
+HELLO
+XMCKL
+\end{verbatim}
+
+\subsubsection{Output}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{vernam_server.png}
+        \caption{Server Side}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{vernam_client.png}
+        \caption{Client Side}
+    \end{subfigure}
+    \caption{Vernam Cipher Output}
+\end{figure}
+
+\newpage
+
+\subsection{Vigenere Cipher}
+
+\subsubsection{Algorithm}
+\begin{enumerate}[label=\arabic*.]
+    \item Server reads plaintext and keyword from user (uppercase letters only)
+    \item For each character in plaintext at position i:
+    \begin{itemize}
+        \item Get corresponding key character at position (i mod key\_length)
+        \item Convert both plaintext and key characters to numbers (A=0 to Z=25)
+        \item Add the two numbers
+        \item Take modulo 26 and convert back to character
+    \end{itemize}
+    \item Server sends ciphertext to client
+    \item Client receives ciphertext and reads key from user
+    \item For decryption, subtract key character values instead of adding
+    \item Apply modulo 26 and convert back to characters
+    \item Client displays decrypted plaintext
+\end{enumerate}
+
+\subsubsection{Server Code}
+\begin{lstlisting}
+import java.util.*;
+import java.net.*;
+import java.io.*;
+
+class Server {
+
+    static String encode(String p, String k) {
+        String c = "";
+        for (int i = 0; i < p.length(); i++) {
+            char pi = p.charAt(i);
+            char ki = k.charAt(i % k.length());
+            c += (char)(((pi - 'A' + ki - 'A') % 26) + 'A');
+        }
+        return c;
+    }
+
+    public static void main(String args[]) throws Exception {
+        ServerSocket ss = new ServerSocket(9999);
+        System.out.println("Server started. Waiting for client...");
+        Socket s = ss.accept();
+        System.out.println("Client connected.");
+
+        Scanner input = new Scanner(System.in);
+
+        System.out.print("Enter plaintext (uppercase letters only): ");
+        String plainText = input.nextLine().toUpperCase();
+
+        System.out.print("Enter key (uppercase letters only): ");
+        String key = input.nextLine().toUpperCase();
+
+        String cipher = encode(plainText, key);
+
+        PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+        out.println(cipher);
+
+        System.out.println("Ciphertext sent to client: " + cipher);
+
+        out.close();
+        s.close();
+        ss.close();
+        input.close();
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Client Code}
+\begin{lstlisting}
+import java.util.*;
+import java.net.*;
+import java.io.*;
+
+class Client {
+    static String decode(String c, String k) {
+        String p = "";
+        for (int i = 0; i < c.length(); i++) {
+            char ci = c.charAt(i);
+            char ki = k.charAt(i % k.length());
+            p += (char)(((ci - 'A' - (ki - 'A') + 26) % 26) + 'A');
+        }
+        return p;
+    }
+
+    public static void main(String args[]) throws Exception {
+        Socket s = new Socket("localhost", 9999);
+        System.out.println("Connected to server.");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        String cipher = in.readLine();
+
+        System.out.println("Received ciphertext: " + cipher);
+
+        Scanner input = new Scanner(System.in);
+        System.out.print("Enter the key to decipher: ");
+        String key = input.nextLine().toUpperCase();
+
+        String plainText = decode(cipher, key);
+        System.out.println("Deciphered plaintext: " + plainText);
+
+        in.close();
+        s.close();
+        input.close();
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Input}
+\begin{verbatim}
+Enter plaintext (uppercase letters only): ATTACKATDAWN
+Enter key (uppercase letters only): LEMON
+\end{verbatim}
+
+\subsubsection{Output}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{vigenere_server.png}
+        \caption{Server Side}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{vigenere_client.png}
+        \caption{Client Side}
+    \end{subfigure}
+    \caption{Vigenere Cipher Output}
+\end{figure}
+
+\newpage
+
+\subsection{Row-Column Transposition Cipher}
+
+\subsubsection{Algorithm}
+\begin{enumerate}[label=\arabic*.]
+    \item Server reads plaintext and keyword from user
+    \item Calculate table dimensions: columns = key length, rows = ceiling(text length / columns)
+    \item Create 2D table and fill it row-wise with plaintext characters
+    \item Pad remaining cells with underscore character if needed
+    \item Sort table columns alphabetically based on keyword characters
+    \item Read sorted table column-wise to create ciphertext
+    \item Server sends ciphertext to client
+    \item Client receives ciphertext and reads key from user
+    \item Client creates table and fills it column-wise with ciphertext
+    \item Decrypt by finding original column positions using key
+    \item Read table row-wise to get plaintext
+    \item Remove padding characters and display plaintext
+\end{enumerate}
+
+\subsubsection{Server Code}
+\begin{lstlisting}
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+class Server {
+
+    static void swapCol(char[][] rt, int i, int j) {
+        for (int k = 0; k < rt.length; k++) {
+            char temp = rt[k][i];
+            rt[k][i] = rt[k][j];
+            rt[k][j] = temp;
+        }
+    }
+
+    static void sortTable(char[][] rt, String k) {
+        char[] keyArr = k.toCharArray();
+        for (int i = 0; i < k.length(); i++) {
+            for (int j = 0; j < k.length() - i - 1; j++) {
+                if (keyArr[j] > keyArr[j + 1]) {
+                    swapCol(rt, j, j + 1);
+                    char temp = keyArr[j];
+                    keyArr[j] = keyArr[j + 1];
+                    keyArr[j + 1] = temp;
+                }
+            }
+        }
+    }
+
+    static String encode(char[][] rt, String k) {
+        String cipher = "";
+        sortTable(rt, k);
+        for (int i = 0; i < k.length(); i++) {
+            for (int j = 0; j < rt.length; j++) {
+                cipher += rt[j][i];
+            }
+        }
+        return cipher;
+    }
+
+    static void makeTable(String p, String k, char[][] rt) {
+        int idx = 0;
+        for (int r = 0; r < rt.length; r++) {
+            for (int c = 0; c < rt[0].length; c++) {
+                if (idx < p.length()) {
+                    rt[r][c] = p.charAt(idx++);
+                } else {
+                    rt[r][c] = '_';
+                }
+            }
+        }
+    }
+
+    public static void main(String args[]) {
+        try {
+            Scanner input = new Scanner(System.in);
+
+            System.out.print("Enter message: ");
+            String plainText = input.nextLine();
+
+            System.out.print("Enter key: ");
+            String key = input.nextLine();
+
+            int cols = key.length();
+            int rows = (int) Math.ceil((double) plainText.length() / cols);
+            char[][] ranktable = new char[rows][cols];
+            makeTable(plainText, key, ranktable);
+            String cipher = encode(ranktable, key);
+
+            ServerSocket serverSocket = new ServerSocket(5000);
+            System.out.println("Server started. Waiting for client...");
+
+            Socket socket = serverSocket.accept();
+            System.out.println("Client connected.");
+
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+            out.println(cipher);
+
+            System.out.println("Encrypted message sent: " + cipher);
+
+            socket.close();
+            serverSocket.close();
+            input.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Client Code}
+\begin{lstlisting}
+import java.util.*;
+import java.net.*;
+import java.io.*;
+
+class Client {
+
+    static String decrypt(char[][] rt, String k) {
+        String plain = "";
+        int cols = k.length();
+        int rows = rt.length;
+        char[] sortedKey = k.toCharArray();
+        Arrays.sort(sortedKey);
+        for (char ch : sortedKey) {
+            int colIndex = k.indexOf(ch);
+            for (int r = 0; r < rows; r++) {
+                plain += rt[r][colIndex];
+            }
+            k = k.substring(0, colIndex) + '_' + k.substring(colIndex + 1);
+        }
+        return plain.replace("_", ""); 
+    }
+
+    public static void main(String args[]){
+        Scanner input = new Scanner(System.in);
+        try {
+            Socket socket = new Socket("localhost", 5000);
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            String cipher = in.readLine();
+
+            System.out.println("Ciphertext received: " + cipher);
+
+            System.out.print("Enter key: ");
+            String key = input.nextLine();
+
+            int cols = key.length();
+            int rows = (int) Math.ceil((double) cipher.length() / cols);
+            char[][] ranktable = new char[rows][cols];
+
+            int idx = 0;
+            for (int c = 0; c < cols; c++) {
+                for (int r = 0; r < rows; r++) {
+                    if (idx < cipher.length()) {
+                        ranktable[r][c] = cipher.charAt(idx++);
+                    } else {
+                        ranktable[r][c] = '_';
+                    }
+                }
+            }
+
+            String plain = decrypt(ranktable, key);
+            System.out.println("Decrypted (original) message: " + plain);
+
+            socket.close();
+            input.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Input}
+\begin{verbatim}
+Enter message: attackpostponeduntiltwoam
+Enter key: 4312567
+\end{verbatim}
+
+\subsubsection{Output}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{rowcolumn_server.png}
+        \caption{Server Side}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{rowcolumn_client.png}
+        \caption{Client Side}
+    \end{subfigure}
+    \caption{Row-Column Transposition Cipher Output}
+\end{figure}
+
+\newpage
+
+\section{Conclusion}
+This laboratory exercise successfully demonstrated the implementation of various classical encryption techniques using Java. The implementation covered both substitution ciphers (Caesar, Playfair, Vernam, and Vigenere) and transposition ciphers (Railfence and Row-Column). 
+
+Each cipher was implemented using a client-server architecture where the server encrypts the plaintext using the specified algorithm and key, then transmits the ciphertext to the client. The client receives the encrypted message, takes the decryption key from the user, and displays the decrypted plaintext.
+
+Key learnings from this exercise include:
+\begin{itemize}
+    \item Understanding the fundamental differences between substitution and transposition ciphers
+    \item Implementation of encryption and decryption algorithms in Java
+    \item Network programming using sockets for client-server communication
+    \item The importance of key management in cryptographic systems
+    \item Practical limitations of classical ciphers and their vulnerability to cryptanalysis
+\end{itemize}
+
+While these classical ciphers are not secure by modern standards, they provide an excellent foundation for understanding the principles of cryptography. Modern encryption systems build upon these concepts with much more sophisticated mathematical operations and longer key spaces to provide adequate security for contemporary applications.
+
+\end{document}
