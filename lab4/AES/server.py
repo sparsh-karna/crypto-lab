@@ -240,7 +240,7 @@ def main():
 
             print("Ciphertext sent (length:", len(ciphertext), "bytes)")
 
-            # Receive ACK
+            # Receive ACK/home/student/Downloads/des_server.java /home/student/Downloads/des_client.java
             resp_len = int.from_bytes(s.recv(4), 'big')
             response = s.recv(resp_len).decode('utf-8', errors='replace')
             print("Receiver response:", response)
