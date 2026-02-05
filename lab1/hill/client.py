@@ -71,7 +71,7 @@ def main():
 
     print("Encrypted message received:", cipher)
 
-    key = input("Enter key: ").strip()
+    key = input("Enter key: ").strip().upper()
 
     n = len(cipher)
     if n * n != len(key):
