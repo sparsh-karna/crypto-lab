@@ -106,6 +106,7 @@ def main():
 
     key_table = make_table(key)
     cipher = encode(plain, key_table)
+    print(key_table)
     print(cipher)
 
 
