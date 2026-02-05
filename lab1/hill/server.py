@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import socket
 
 
 def mul(p, k):
@@ -32,8 +33,8 @@ def encode(result):
 
 
 def main():
-    plain_text = input().strip()
-    key = input().strip()
+    plain_text = input("Enter plaintext: ").strip()
+    key = input("Enter key: ").strip()
 
     n = len(plain_text)
     if n * n != len(key):
@@ -41,6 +42,8 @@ def main():
 
     # Create key matrix (n x n)
     key_matrix = make_matrix(key, n, n)
+    print("Key matrix:")
+    print(key_matrix)
 
     # Create plain text matrix (n x cols)
     cols = math.ceil(len(plain_text) / n)
@@ -49,14 +52,23 @@ def main():
     # Multiply: key_matrix (n x n) * plain_matrix (n x cols)
     result = mul(plain_matrix, key_matrix)
 
-    # Print intermediate results
-    for row in result:
-        for val in row:
-            print(int(val), end="")
-        print()
-
     cipher = encode(result)
-    print(cipher)
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(('localhost', 5000))
+    server_socket.listen(1)
+    print("Server started. Waiting for client...")
+
+    conn, addr = server_socket.accept()
+    print("Client connected.")
+
+    conn.sendall((cipher + "\n").encode())
+
+    print("Encrypted message sent:", cipher)
+
+    conn.close()
+    server_socket.close()
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import socket
 
 
 def mod_inverse(a, m):
@@ -63,8 +64,14 @@ def decode(result):
 
 
 def main():
-    cipher = input().strip()
-    key = input().strip()
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(('localhost', 5000))
+
+    cipher = client_socket.recv(1024).decode().strip()
+
+    print("Encrypted message received:", cipher)
+
+    key = input("Enter key: ").strip()
 
     n = len(cipher)
     if n * n != len(key):
@@ -72,12 +79,15 @@ def main():
 
     # Create key matrix (n x n)
     key_matrix = make_matrix(key, n, n)
+    print("Key matrix:")
+    print(key_matrix)
 
     # Find inverse of key matrix
     key_inverse = matrix_mod_inverse(key_matrix, 26)
 
     if key_inverse is None:
         print("Key matrix is not invertible mod 26")
+        client_socket.close()
         return
 
     # Create cipher matrix (n x cols)
@@ -88,7 +98,9 @@ def main():
     result = np.dot(key_inverse, cipher_matrix) % 26
 
     plain = decode(result)
-    print(plain)
+    print("Decrypted (original) message:", plain)
+
+    client_socket.close()
 
 
 if __name__ == "__main__":
