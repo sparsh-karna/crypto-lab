@@ -3,19 +3,34 @@ import math
 import numpy as np
 
 
-def decrypt(table, key):
+def decrypt(cipher, key):
     """Decrypt by reversing the column sort"""
-    plain = ""
-    rows = table.shape[0]
-    sorted_key = sorted(key)
-
-    key_list = list(key)
-    for ch in sorted_key:
-        col_index = key_list.index(ch)
+    cols = len(key)
+    rows = math.ceil(len(cipher) / cols)
+    
+    # Create table to hold sorted columns
+    table = np.empty((rows, cols), dtype=str)
+    
+    # Get the sorted key indices
+    key_with_indices = [(char, idx) for idx, char in enumerate(key)]
+    sorted_key = sorted(key_with_indices)
+    
+    # Fill the table column by column from ciphertext (in sorted key order)
+    idx = 0
+    for _, original_col in sorted_key:
         for r in range(rows):
-            plain += table[r][col_index]
-        key_list[col_index] = '_'  # Mark as used
-
+            if idx < len(cipher):
+                table[r][original_col] = cipher[idx]
+                idx += 1
+            else:
+                table[r][original_col] = '_'
+    
+    # Read row by row to get plaintext
+    plain = ""
+    for r in range(rows):
+        for c in range(cols):
+            plain += table[r][c]
+    
     return plain.replace("_", "")
 
 
@@ -29,20 +44,7 @@ def main():
 
     key = input("Enter key: ")
 
-    cols = len(key)
-    rows = math.ceil(len(cipher) / cols)
-    table = np.empty((rows, cols), dtype=str)
-
-    idx = 0
-    for c in range(cols):
-        for r in range(rows):
-            if idx < len(cipher):
-                table[r][c] = cipher[idx]
-                idx += 1
-            else:
-                table[r][c] = '_'
-
-    plain = decrypt(table, key)
+    plain = decrypt(cipher, key)
     print("Decrypted (original) message:", plain)
 
     client_socket.close()
