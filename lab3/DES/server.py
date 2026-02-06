@@ -133,7 +133,7 @@ def text_to_block(text: str, pos: int) -> int:
 
 def main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(("localhost", 5000))
+    server.bind(("localhost", 5001))
     server.listen(1)
     print("Server listening on port 5000... (waiting for client)")
 
