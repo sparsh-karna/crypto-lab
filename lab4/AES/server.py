@@ -232,7 +232,7 @@ def main():
 
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect(("localhost", 5000))
+            s.connect(("localhost", 5001))
 
             # Send length + ciphertext
             s.send(len(ciphertext).to_bytes(4, 'big'))
