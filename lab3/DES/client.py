@@ -137,7 +137,7 @@ def block_to_text(block: int) -> str:
 def main():
     print("Connecting to server (localhost:5000)...")
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(("localhost", 5000))
+    client.connect(("localhost", 5001))
 
     print("Connected! Waiting for ciphertext...\n")
 
