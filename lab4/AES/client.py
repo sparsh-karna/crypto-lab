@@ -224,7 +224,7 @@ def parse_key(key_str: str) -> bytes:
 
 
 def main():
-    PORT = 5000
+    PORT = 5001
     print(f"Receiver listening on port {PORT}")
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
